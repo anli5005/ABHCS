@@ -1,4 +1,5 @@
 import SwiftUI
+import EventKit
 
 struct SectionHeaderView: View {
     var content: LocalizedStringKey
@@ -31,6 +32,8 @@ struct ContentView: View {
     @State private var searchText = ""
     @State private var searchTokens = [SearchToken]()
     @State private var searchResults = [SearchSection]()
+    
+    @State private var eventStore = EKEventStore()
     
     @Environment(\.horizontalSizeClass) var horizontalSizeClass
     
@@ -150,8 +153,6 @@ struct ContentView: View {
             .task {
                 if viewModel.days.isEmpty {
                     await viewModel.load()
-                } else {
-                    selectedDayIndex = 0
                 }
             }
             .toolbar {
@@ -168,7 +169,7 @@ struct ContentView: View {
                 }
             }
             .navigationDestination(for: ConferenceEvent.self) { event in
-                EventInspector(event: event)
+                EventInspector(event: event, eventStore: eventStore)
             }
             .inspector(isPresented: Binding {
                 isPresentingInspector && horizontalSizeClass != .compact
@@ -179,7 +180,7 @@ struct ContentView: View {
             }) {
                 Group {
                     if let selectedEvent {
-                        EventInspector(event: selectedEvent)
+                        EventInspector(event: selectedEvent, eventStore: eventStore)
                     } else {
                         Text("Select an event to view its details.")
                             .padding()

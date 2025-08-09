@@ -178,7 +178,7 @@ class ConferenceScheduleViewModel {
         request.httpMethod = "POST"
         request.setValue("text/plain", forHTTPHeaderField: "Content-Type")
         request.setValue("*/*", forHTTPHeaderField: "Accept")
-        request.httpBody = "{\"structuredQuery\":{\"from\":[{\"collectionId\":\"events\"}],\"orderBy\":[{\"field\":{\"fieldPath\":\"begin_timestamp\"},\"direction\":\"DESCENDING\"},{\"field\":{\"fieldPath\":\"__name__\"},\"direction\":\"DESCENDING\"}]}}".data(using: .utf8)
+        request.httpBody = "{\"structuredQuery\":{\"from\":[{\"collectionId\":\"events\"}],\"orderBy\":[{\"field\":{\"fieldPath\":\"begin_timestamp\"},\"direction\":\"ASCENDING\"},{\"field\":{\"fieldPath\":\"__name__\"},\"direction\":\"ASCENDING\"}]}}".data(using: .utf8)
         do {
             let (data, _) = try await URLSession.shared.data(for: request)
             let decoder = JSONDecoder()

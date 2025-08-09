@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import EventKit
 
 #if os(macOS)
 let textColor = Color(NSColor.textColor)
@@ -15,6 +16,9 @@ let textColor = Color(UIColor.label)
 
 struct EventInspector: View {
     var event: ConferenceEvent
+    var eventStore: EKEventStore
+    
+    @State var isAddingEvent = false
     
     var body: some View {
         ScrollView {
@@ -36,31 +40,74 @@ struct EventInspector: View {
                 .padding(.top, 8)
                 
                 if let location = event.location {
-                    HStack(alignment: .top) {
-                        Image(systemName: "map")
-                        Text(location)
+                    VStack(alignment: .leading, spacing: 4) {
+                        if let begin = event.begin {
+                            HStack(alignment: .top) {
+                                Image(systemName: "calendar")
+                                Text("\(begin, format: Date.FormatStyle(date: .long))")
+                            }
+                        }
+                        
+                        if let begin = event.begin, let end = event.end {
+                            HStack(alignment: .top) {
+                                Image(systemName: "clock")
+                                Text("\(begin, format: Date.FormatStyle(time: .shortened))–\(end, format: Date.FormatStyle(time: .shortened))")
+                            }
+                        }
+                        
+                        HStack(alignment: .top) {
+                            Image(systemName: "map")
+                            Text(location)
+                        }
                     }
                     .padding(.top, 16)
                 }
                 
+                #if os(iOS)
                 Group {
-                    if let attrStr = try? AttributedString(markdown: event.description, options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace)) {
-                        Text(attrStr)
-                            .textSelection(.enabled)
+                    if #available(iOS 26.0, *) {
+                        Button {
+                            isAddingEvent = true
+                        } label: {
+                            Label("Add to Calendar", systemImage: "calendar.badge.plus")
+                                .fontWeight(.medium)
+                        }
+                        .buttonStyle(.glassProminent)
                     } else {
-                        Text(event.description)
-                            .textSelection(.enabled)
+                        Button {
+                            isAddingEvent = true
+                        } label: {
+                            Label("Add to Calendar", systemImage: "calendar.badge.plus")
+                                .fontWeight(.medium)
+                        }
+                        .buttonStyle(.borderedProminent)
                     }
                 }
+                .buttonBorderShape(.capsule)
+                .tint(.red)
                 .padding(.top, 16)
+                #endif
+                
+                let attrStr = (try? AttributedString(markdown: event.description, options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace))) ?? AttributedString(event.description)
+                
+                Text(attrStr)
+                    .padding(.top, 16)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             .padding()
             .frame(maxWidth: .infinity, alignment: .leading)
+            #if os(iOS)
+            .sheet(isPresented: $isAddingEvent) {
+                SaveToCalendarView(event: event, eventStore: eventStore)
+            }
+            #endif
         }
     }
 }
 
 #Preview {
+    @Previewable @State var eventStore = EKEventStore()
+    
     Rectangle()
         .fill(.clear)
         .frame(width: 100, height: 400)
@@ -75,7 +122,7 @@ struct EventInspector: View {
                     location: "Mock Room 1",
                     speakers: [],
                     tags: [Tag(type: .eventCategory, id: 48011, label: "Event", backgroundColor: "#8248f8", foregroundColor: "#ffffff", iconName: "calendar")]
-                ))
+                ), eventStore: eventStore)
             }
             .foregroundStyle(textColor)
         }
